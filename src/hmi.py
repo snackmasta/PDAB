@@ -5,7 +5,7 @@ class DesalinationHMI:
     def __init__(self, root, system: DesalinationSystem):
         self.root = root
         self.system = system
-        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm']}
+        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm','p103','p104','p105','p106','v101','uv101','alm101']}
         self.labels = {}
         self._build_gui()
 
@@ -44,6 +44,28 @@ class DesalinationHMI:
         self.labels['transfer'] = tk.Label(frame_pumps, text="Transfer Pump:", font=("Arial", 11))
         self.labels['transfer'].grid(row=2, column=0, sticky='e')
         tk.Label(frame_pumps, textvariable=self.vars['transfer'], font=("Arial", 11)).grid(row=2, column=1, sticky='w')
+        # Architecture Update: Add new actuators to HMI
+        self.labels['p103'] = tk.Label(frame_pumps, text="Post-treatment Pump:", font=("Arial", 11))
+        self.labels['p103'].grid(row=3, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['p103'], font=("Arial", 11)).grid(row=3, column=1, sticky='w')
+        self.labels['p104'] = tk.Label(frame_pumps, text="Transfer Pump to Ground:", font=("Arial", 11))
+        self.labels['p104'].grid(row=4, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['p104'], font=("Arial", 11)).grid(row=4, column=1, sticky='w')
+        self.labels['p105'] = tk.Label(frame_pumps, text="Pump to Rooftop:", font=("Arial", 11))
+        self.labels['p105'].grid(row=5, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['p105'], font=("Arial", 11)).grid(row=5, column=1, sticky='w')
+        self.labels['p106'] = tk.Label(frame_pumps, text="Transfer Pump to Roof Tank:", font=("Arial", 11))
+        self.labels['p106'].grid(row=6, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['p106'], font=("Arial", 11)).grid(row=6, column=1, sticky='w')
+        self.labels['v101'] = tk.Label(frame_pumps, text="Motorized Valve V101:", font=("Arial", 11))
+        self.labels['v101'].grid(row=7, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['v101'], font=("Arial", 11)).grid(row=7, column=1, sticky='w')
+        self.labels['uv101'] = tk.Label(frame_pumps, text="UV Disinfection:", font=("Arial", 11))
+        self.labels['uv101'].grid(row=8, column=0, sticky='e')
+        tk.Label(frame_pumps, textvariable=self.vars['uv101'], font=("Arial", 11)).grid(row=8, column=1, sticky='w')
+        self.labels['alm101'] = tk.Label(frame_alarm, text="General Alarm:", font=("Arial", 11, "bold"))
+        self.labels['alm101'].grid(row=1, column=0, sticky='e')
+        tk.Label(frame_alarm, textvariable=self.vars['alm101'], font=("Arial", 11, "bold")).grid(row=1, column=1, sticky='w')
         self.labels['alarm'] = tk.Label(frame_alarm, text="Alarm:", font=("Arial", 11, "bold"))
         self.labels['alarm'].grid(row=0, column=0, sticky='e')
         tk.Label(frame_alarm, textvariable=self.vars['alarm'], font=("Arial", 11, "bold")).grid(row=0, column=1, sticky='w')
@@ -61,8 +83,9 @@ class DesalinationHMI:
     def update(self, step):
         status = self.system.get_status()
         self.vars['step'].set(f"Step {step+1}")
-        for k in ['ground','roof','turb','press','intake','ro','transfer','alarm']:
-            self.vars[k].set(status[k])
+        for k in self.vars:
+            if k in status:
+                self.vars[k].set(status[k])
         c = self.system.config
         self.set_label_color(self.labels['ground'], status['ground'], 'black', 'red', self.system.ground_tank_level < c.GROUND_TANK_MIN or self.system.ground_tank_level > c.GROUND_TANK_MAX)
         self.set_label_color(self.labels['roof'], status['roof'], 'black', 'red', self.system.roof_tank_level > c.ROOF_TANK_MAX)
@@ -72,6 +95,7 @@ class DesalinationHMI:
         self.set_label_color(self.labels['ro'], status['ro'], 'green', 'gray', status['ro'] == 'OFF')
         self.set_label_color(self.labels['transfer'], status['transfer'], 'green', 'gray', status['transfer'] == 'OFF')
         self.set_label_color(self.labels['alarm'], status['alarm'], 'black', 'red', status['alarm'] == 'YES')
+        # Architecture Update: Add color logic for new actuators if needed
         self.root.update()
 
     def start_system(self):

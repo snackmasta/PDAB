@@ -5,6 +5,14 @@ class DesalinationSystem:
     def __init__(self, config: SystemConfig):
         self.config = config
         self.reset()
+        # Architecture Update: Add new actuators and sensors as attributes
+        self.p103 = False  # Post-treatment Pump
+        self.p104 = False  # Transfer Pump to Ground Tank
+        self.p105 = False  # Pump to Rooftop
+        self.p106 = False  # Transfer Pump to Roof Tank
+        self.v101 = False  # Motorized Valves (example, can be expanded)
+        self.uv101 = False # UV Disinfection
+        self.alm101 = False # General Alarm
 
     def reset(self):
         self.ground_tank_level = 50.0
@@ -17,6 +25,14 @@ class DesalinationSystem:
         self.transfer_pump = False
         self.running = False  # Ensure system boots in STOP condition
         self.emergency = False
+        # Architecture Update: Reset new actuators
+        self.p103 = False
+        self.p104 = False
+        self.p105 = False
+        self.p106 = False
+        self.v101 = False
+        self.uv101 = False
+        self.alm101 = False
 
     def step(self):
         if not getattr(self, 'running', False):
@@ -24,6 +40,14 @@ class DesalinationSystem:
             self.intake_pump = False
             self.ro_pump = False
             self.transfer_pump = False
+            # Architecture Update: All new actuators OFF
+            self.p103 = False
+            self.p104 = False
+            self.p105 = False
+            self.p106 = False
+            self.v101 = False
+            self.uv101 = False
+            self.alm101 = False
             return
         c = self.config
         self.pre_treatment_turbidity += random.uniform(-0.2, 0.2)
@@ -34,6 +58,14 @@ class DesalinationSystem:
         self.intake_pump = ro_ok and (self.ground_tank_level < c.GROUND_TANK_MAX)
         self.ro_pump = ro_ok
         self.transfer_pump = (self.ground_tank_level > 30) and (self.roof_tank_level < 90)
+        # Architecture Update: New actuators logic (example, can be expanded)
+        self.p103 = (self.ground_tank_level > 30)  # Post-treatment pump logic
+        self.p104 = (self.ro_pump and self.ground_tank_level < c.GROUND_TANK_MAX)  # Transfer to ground tank
+        self.p105 = (self.ground_tank_level > 40) and (self.roof_tank_level < 95)  # Pump to rooftop
+        self.p106 = (self.roof_tank_level < c.ROOF_TANK_MAX)  # Transfer to roof tank
+        self.v101 = self.intake_pump or self.ro_pump  # Example: open valve if any pump is on
+        self.uv101 = self.ro_pump  # UV on if RO is running
+        self.alm101 = self.alarm
         if self.intake_pump:
             self.ground_tank_level += 1.5
         if self.ro_pump:
@@ -49,6 +81,7 @@ class DesalinationSystem:
             self.ground_tank_level < c.GROUND_TANK_MIN or
             self.roof_tank_level > c.ROOF_TANK_MAX
         )
+        self.alm101 = self.alarm
 
     def get_status(self):
         return {
@@ -59,7 +92,15 @@ class DesalinationSystem:
             'intake': 'ON' if self.intake_pump else 'OFF',
             'ro': 'ON' if self.ro_pump else 'OFF',
             'transfer': 'ON' if self.transfer_pump else 'OFF',
-            'alarm': 'YES' if self.alarm else 'NO'
+            'alarm': 'YES' if self.alarm else 'NO',
+            # Architecture Update: Add new actuators to status
+            'p103': 'ON' if self.p103 else 'OFF',
+            'p104': 'ON' if self.p104 else 'OFF',
+            'p105': 'ON' if self.p105 else 'OFF',
+            'p106': 'ON' if self.p106 else 'OFF',
+            'v101': 'ON' if self.v101 else 'OFF',
+            'uv101': 'ON' if self.uv101 else 'OFF',
+            'alm101': 'ON' if self.alm101 else 'OFF'
         }
 
     def start(self):
