@@ -36,11 +36,10 @@ class DesalinationSystem:
 
     def step(self):
         if not getattr(self, 'running', False):
-            # If not running, all pumps should be OFF
+            # If not running, all pumps and actuators should be OFF
             self.intake_pump = False
             self.ro_pump = False
             self.transfer_pump = False
-            # Architecture Update: All new actuators OFF
             self.p103 = False
             self.p104 = False
             self.p105 = False
@@ -120,11 +119,18 @@ class DesalinationSystem:
         self.running = True
 
     def stop(self):
-        # Simulate staged shutdown: turn off all pumps, set running to False
-        print("[STOP SEQUENCE] Stopping system. Turning off all pumps...")
+        # Simulate staged shutdown: turn off all pumps and actuators, set running to False
+        print("[STOP SEQUENCE] Stopping system. Turning off all pumps and actuators...")
         self.intake_pump = False
         self.ro_pump = False
         self.transfer_pump = False
+        self.p103 = False
+        self.p104 = False
+        self.p105 = False
+        self.p106 = False
+        self.v101 = False
+        self.uv101 = False
+        self.alm101 = False
         self.running = False
         # Optionally, set alarm if needed
 
