@@ -19,6 +19,9 @@ class DesalinationHMI:
         frame_pumps.grid(row=3, column=0, padx=10, pady=5, sticky='ew')
         frame_alarm = tk.LabelFrame(self.root, text="Alarm", padx=10, pady=5, font=("Arial", 11, "bold"))
         frame_alarm.grid(row=4, column=0, padx=10, pady=5, sticky='ew')
+        # Add control buttons
+        frame_ctrl = tk.LabelFrame(self.root, text="Controls", padx=10, pady=5, font=("Arial", 11, "bold"))
+        frame_ctrl.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
         tk.Label(self.root, textvariable=self.vars['step'], font=("Arial", 14, "bold")).grid(row=0, column=0, pady=5)
         self.labels['ground'] = tk.Label(frame_tanks, text="Ground Tank Level:", font=("Arial", 11))
         self.labels['ground'].grid(row=0, column=0, sticky='e')
@@ -44,6 +47,13 @@ class DesalinationHMI:
         self.labels['alarm'] = tk.Label(frame_alarm, text="Alarm:", font=("Arial", 11, "bold"))
         self.labels['alarm'].grid(row=0, column=0, sticky='e')
         tk.Label(frame_alarm, textvariable=self.vars['alarm'], font=("Arial", 11, "bold")).grid(row=0, column=1, sticky='w')
+        # Add control buttons
+        frame_ctrl = tk.LabelFrame(self.root, text="Controls", padx=10, pady=5, font=("Arial", 11, "bold"))
+        frame_ctrl.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
+        tk.Button(frame_ctrl, text="Start", width=10, command=self.start_system).grid(row=0, column=0, padx=5)
+        tk.Button(frame_ctrl, text="Stop", width=10, command=self.stop_system).grid(row=0, column=1, padx=5)
+        tk.Button(frame_ctrl, text="Emergency", width=10, command=self.emergency_stop).grid(row=0, column=2, padx=5)
+        tk.Button(frame_ctrl, text="Drain Roof Tank", width=15, command=self.drain_roof_tank).grid(row=0, column=3, padx=5)
 
     def set_label_color(self, label, value, normal_color, alarm_color, alarm_cond):
         label.config(fg=alarm_color if alarm_cond else normal_color)
@@ -63,3 +73,38 @@ class DesalinationHMI:
         self.set_label_color(self.labels['transfer'], status['transfer'], 'green', 'gray', status['transfer'] == 'OFF')
         self.set_label_color(self.labels['alarm'], status['alarm'], 'black', 'red', status['alarm'] == 'YES')
         self.root.update()
+
+    def start_system(self):
+        self.system.start()
+        self._run_loop()
+
+    def stop_system(self):
+        self.system.stop()
+
+    def emergency_stop(self):
+        self.system.emergency_stop()
+        self.update(-1)
+
+    def drain_roof_tank(self):
+        self.system.drain_roof_tank()
+        self.update(-1)
+
+    def _run_loop(self):
+        if getattr(self.system, 'running', False) and not getattr(self.system, 'emergency', False):
+            self.system.step()
+            self.update(getattr(self, '_step', 0))
+            self._step = getattr(self, '_step', 0) + 1
+            self.root.after(500, self._run_loop)
+        else:
+            self.update(getattr(self, '_step', 0))
+
+if __name__ == "__main__":
+    from config import SystemConfig
+    from process import DesalinationSystem
+    import tkinter as tk
+    config = SystemConfig()
+    system = DesalinationSystem(config)
+    root = tk.Tk()
+    hmi = DesalinationHMI(root, system)
+    hmi.update(0)
+    root.mainloop()
