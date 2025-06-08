@@ -37,6 +37,7 @@
 | UV-101                  | DO        | UV Disinfection Unit On/Off                 | Post-treatment          |
 | ALM-101                 | DO        | General Alarm Output                        | Control Panel           |
 | HMI/SCADA               | Comm      | Operator Interface                          | Control Room            |
+| PRV-101                 | DO        | Pressure Relief Valve Open/Close            | RO Membrane/Brine Line      |
 
 **Legend:**
 - AI: Analog Input
@@ -49,5 +50,3 @@
 - All pumps and valves have local/remote and manual/auto modes.
 - System can be expanded for remote monitoring, data logging, and advanced diagnostics.
 - **Architecture Update:** The I/O table now includes all actuators and sensors as per the new architecture, including additional pumps (P-103 to P-106) and explicit mapping to logic/PLC functions.
-
-// ...existing code...

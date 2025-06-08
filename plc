@@ -17,15 +17,24 @@ VAR
     P_101 : BOOL; // Seawater Intake Pump
     P_102 : BOOL; // RO High-Pressure Pump
     P_103 : BOOL; // Transfer Pump to Roof
+    P_104 : BOOL; // Transfer Pump to Ground Tank
+    P_105 : BOOL; // Pump to Rooftop
+    P_106 : BOOL; // Transfer Pump to Roof Tank
     V_101, V_102, V_103, V_104, V_105, V_106 : BOOL; // Valves
     UV_101 : BOOL; // UV Disinfection
     ALM_101 : BOOL; // General Alarm
+    PRV_101 : BOOL; // Pressure Relief Valve
 
-    // Internal
+    // Expanded Internal
     PreTreatment_OK : BOOL;
     RO_OK : BOOL;
     PostTreatment_OK : BOOL;
     Alarm : BOOL;
+    P103_OK : BOOL;
+    P104_OK : BOOL;
+    P105_OK : BOOL;
+    P106_OK : BOOL;
+    PRV_FAULT : BOOL;
 END_VAR
 
 // Pre-treatment logic
@@ -42,22 +51,37 @@ P_101 := RO_OK AND (LT_101 < 95.0);
 PostTreatment_OK := RO_OK;
 UV_101 := PostTreatment_OK;
 
-// Transfer pump to roof tank
-P_103 := (LT_101 > 30.0) AND (LT_102 < 90.0);
+// Post-treatment pump (P-103)
+P103_OK := (LT_101 > 30.0);
+P_103 := P103_OK;
+
+// Transfer Pump to Ground Tank (P-104)
+P104_OK := RO_OK AND (LT_101 < 95.0);
+P_104 := P104_OK;
+
+// Pump to Rooftop (P-105)
+P105_OK := (LT_101 > 40.0) AND (LT_102 < 95.0);
+P_105 := P105_OK;
+
+// Transfer Pump to Roof Tank (P-106)
+P106_OK := (LT_102 < 98.0);
+P_106 := P106_OK;
+
+// PRV-101 logic: open if RO feed pressure is above max safe value or fault
+PRV_FAULT := (PT_101 > 70.0) OR Alarm;
+PRV_101 := PRV_FAULT;
 
 // Alarms
 Alarm := (TU_101 > 10.0) OR (PT_101 < 45.0) OR (PT_101 > 75.0) OR (LT_101 < 10.0) OR (LT_102 > 98.0);
 ALM_101 := Alarm;
 
-// Example valve logic (open/close as needed)
-V_101 := P_101;
+// Valve logic (example: open if any related pump is on)
+V_101 := P_101 OR P_102;
 V_102 := P_102;
 V_103 := P_103;
+V_104 := P_104;
+V_105 := P_105;
+V_106 := P_106;
 // ... add more detailed valve logic as needed
 
 END_PROGRAM
-
-// Notes:
-// - All setpoints (e.g., levels, pressures) should be adjusted for your system.
-// - Add interlocks, manual/auto modes, and HMI/SCADA interface as required.
-// - For a real project, modularize code and use function blocks for each subsystem.
