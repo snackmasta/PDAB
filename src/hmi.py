@@ -5,7 +5,7 @@ class DesalinationHMI:
     def __init__(self, root, system: DesalinationSystem):
         self.root = root
         self.system = system
-        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm','p103','p104','p105','p106','v101','uv101','alm101']}
+        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm','p103','p104','p105','p106','v101','uv101','alm101','prv101']}
         self.labels = {}
         self._build_gui()
 
@@ -76,6 +76,11 @@ class DesalinationHMI:
         tk.Button(frame_ctrl, text="Stop", width=10, command=self.stop_system).grid(row=0, column=1, padx=5)
         tk.Button(frame_ctrl, text="Emergency", width=10, command=self.emergency_stop).grid(row=0, column=2, padx=5)
         tk.Button(frame_ctrl, text="Drain Roof Tank", width=15, command=self.drain_roof_tank).grid(row=0, column=3, padx=5)
+        # Add PRV101 label only if not already present
+        if 'prv101' not in self.labels:
+            self.labels['prv101'] = tk.Label(frame_pumps, text="Pressure Relief Valve PRV101:", font=("Arial", 11))
+            self.labels['prv101'].grid(row=9, column=0, sticky='e')
+            tk.Label(frame_pumps, textvariable=self.vars['prv101'], font=("Arial", 11)).grid(row=9, column=1, sticky='w')
 
     def set_label_color(self, label, value, normal_color, alarm_color, alarm_cond):
         label.config(fg=alarm_color if alarm_cond else normal_color)
@@ -84,18 +89,24 @@ class DesalinationHMI:
         status = self.system.get_status()
         self.vars['step'].set(f"Step {step+1}")
         for k in self.vars:
-            if k in status:
-                self.vars[k].set(status[k])
+            self.vars[k].set(status.get(k, 'OFF'))
         c = self.system.config
-        self.set_label_color(self.labels['ground'], status['ground'], 'black', 'red', self.system.ground_tank_level < c.GROUND_TANK_MIN or self.system.ground_tank_level > c.GROUND_TANK_MAX)
-        self.set_label_color(self.labels['roof'], status['roof'], 'black', 'red', self.system.roof_tank_level > c.ROOF_TANK_MAX)
-        self.set_label_color(self.labels['turb'], status['turb'], 'black', 'red', self.system.pre_treatment_turbidity > c.TURBIDITY_MAX)
-        self.set_label_color(self.labels['press'], status['press'], 'black', 'red', self.system.ro_feed_pressure < c.PRESSURE_MIN or self.system.ro_feed_pressure > c.PRESSURE_MAX)
-        self.set_label_color(self.labels['intake'], status['intake'], 'green', 'gray', status['intake'] == 'OFF')
-        self.set_label_color(self.labels['ro'], status['ro'], 'green', 'gray', status['ro'] == 'OFF')
-        self.set_label_color(self.labels['transfer'], status['transfer'], 'green', 'gray', status['transfer'] == 'OFF')
-        self.set_label_color(self.labels['alarm'], status['alarm'], 'black', 'red', status['alarm'] == 'YES')
-        # Architecture Update: Add color logic for new actuators if needed
+        # Only set label color if label exists
+        for label_key in self.labels:
+            if label_key in status:
+                if label_key == 'alarm':
+                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'black', 'red', status.get(label_key,'OFF') == 'YES')
+                elif label_key == 'prv101':
+                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'green', 'gray', status.get(label_key,'OFF') == 'OFF')
+                elif label_key in ['ground','roof','turb','press']:
+                    # Use process value logic
+                    continue
+                else:
+                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'green', 'gray', status.get(label_key,'OFF') == 'OFF')
+        self.set_label_color(self.labels['ground'], status.get('ground','OFF'), 'black', 'red', self.system.ground_tank_level < c.GROUND_TANK_MIN or self.system.ground_tank_level > c.GROUND_TANK_MAX)
+        self.set_label_color(self.labels['roof'], status.get('roof','OFF'), 'black', 'red', self.system.roof_tank_level > c.ROOF_TANK_MAX)
+        self.set_label_color(self.labels['turb'], status.get('turb','OFF'), 'black', 'red', self.system.pre_treatment_turbidity > c.TURBIDITY_MAX)
+        self.set_label_color(self.labels['press'], status.get('press','OFF'), 'black', 'red', self.system.ro_feed_pressure < c.PRESSURE_MIN or self.system.ro_feed_pressure > c.PRESSURE_MAX)
         self.root.update()
 
     def start_system(self):

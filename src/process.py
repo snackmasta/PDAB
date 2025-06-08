@@ -13,6 +13,7 @@ class DesalinationSystem:
         self.v101 = False  # Motorized Valves (example, can be expanded)
         self.uv101 = False # UV Disinfection
         self.alm101 = False # General Alarm
+        self.prv101 = False  # PRV-101 Pressure Relief Valve
 
     def reset(self):
         self.ground_tank_level = 50.0
@@ -33,6 +34,7 @@ class DesalinationSystem:
         self.v101 = False
         self.uv101 = False
         self.alm101 = False
+        self.prv101 = False
 
     def step(self):
         if not getattr(self, 'running', False):
@@ -47,6 +49,7 @@ class DesalinationSystem:
             self.v101 = False
             self.uv101 = False
             self.alm101 = False
+            self.prv101 = False
             return
         c = self.config
         self.pre_treatment_turbidity += random.uniform(-0.2, 0.2)
@@ -65,13 +68,14 @@ class DesalinationSystem:
         self.v101 = self.intake_pump or self.ro_pump  # Example: open valve if any pump is on
         self.uv101 = self.ro_pump  # UV on if RO is running
         self.alm101 = self.alarm
+        # PRV-101 logic: open if RO feed pressure is above max safe value
+        self.prv101 = self.ro_feed_pressure > c.PRESSURE_MAX
         if self.intake_pump:
             self.ground_tank_level += 1.5
-        if self.ro_pump:
-            self.ground_tank_level -= 1.0
         if self.transfer_pump:
-            self.ground_tank_level -= 0.5
-            self.roof_tank_level += 0.5
+            self.ground_tank_level -= 1.0  # All RO output goes to roof tank if transfer_pump is ON
+            self.roof_tank_level += 1.0
+        # If transfer_pump is OFF, ground tank does not decrease due to RO
         self.ground_tank_level = min(max(self.ground_tank_level, c.GROUND_TANK_MIN), c.GROUND_TANK_MAX)
         self.roof_tank_level = min(max(self.roof_tank_level, 0), c.ROOF_TANK_MAX)
         self.alarm = (
@@ -99,7 +103,8 @@ class DesalinationSystem:
             'p106': 'ON' if self.p106 else 'OFF',
             'v101': 'ON' if self.v101 else 'OFF',
             'uv101': 'ON' if self.uv101 else 'OFF',
-            'alm101': 'ON' if self.alm101 else 'OFF'
+            'alm101': 'ON' if self.alm101 else 'OFF',
+            'prv101': 'ON' if self.prv101 else 'OFF',
         }
 
     def start(self):
@@ -131,6 +136,7 @@ class DesalinationSystem:
         self.v101 = False
         self.uv101 = False
         self.alm101 = False
+        self.prv101 = False
         self.running = False
         # Optionally, set alarm if needed
 

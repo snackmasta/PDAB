@@ -142,6 +142,7 @@ flowchart
       F_ALARM["If any alarm → ALM101 ON"]
       F_UV["If D active → UV101 ON"]
       F_VALVE["If B active → V101 ON"]
+      F_PRV["If PT-101 > Max or Fault → PRV101 OPEN"]
     end
     TU101 --value--> F_TU101
     TU101 --value--> F_ALARM
@@ -149,6 +150,7 @@ flowchart
     FT101 --value--> F_ALARM
     PT101 --value--> F_PT101
     PT101 --value--> F_ALARM
+    PT101 --value--> F_PRV
     FT102 --value--> F_PT101
     FT102 --value--> F_ALARM
     PT102 --value--> F_PT101
@@ -170,6 +172,7 @@ flowchart
     F_ALARM --logic--> ALM101
     F_UV --logic--> UV101
     F_VALVE --logic--> V101
+    F_PRV --logic--> PRV101
 
     %% Actuators (controlled by logic)
     subgraph Actuators
@@ -182,10 +185,13 @@ flowchart
       V101["V-101...V-106 Motorized Valves"]
       UV101["UV-101 UV Disinfection"]
       ALM101["ALM-101 General Alarm"]
+      PRV101["PRV-101 Pressure Relief Valve"]
     end
     V101 --controls--> B
     UV101 --disinfects--> D
     ALM101 --alerts--> F_VALVE
+    PRV101 --relieves pressure--> C
+    PRV101 --to Brine/Drain--> DRAIN[Brine/Drain]
 ```
 
 *Legend (based on I/O Table):*
