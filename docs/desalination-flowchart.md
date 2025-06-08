@@ -95,11 +95,11 @@ flowchart
     START --> A
     A[Seawater Intake]
     P101[P-101 Seawater Intake Pump]
-    B[Pre-treatment\nFiltration and Sediment Removal]
+    B[Pre-treatment Filtration and Sediment Removal]
     P102[P-102 RO High-Pressure Pump]
-    C[RO Membrane\nDesalination]
+    C[RO Membrane Desalination]
     P103[P-103 Post-treatment Pump]
-    D[Post-treatment\nMineralization and Disinfection]
+    D[Post-treatment Mineralization and Disinfection]
     P104[P-104 Transfer Pump to Ground Tank]
     E[Ground Tank]
     P105[P-105 Pump to Rooftop]
@@ -108,8 +108,6 @@ flowchart
     G[Roof Tank]
     H[Consumption]
     H --> STOP
-
-    %% Connect process flow through actuator blocks
     A --> P101 --> B --> P102 --> C --> P103 --> D --> P104 --> E --> P105 --> F --> P106 --> G --> H
 
     %% Sensors (measure process, send signal to logic group)
@@ -134,7 +132,7 @@ flowchart
     subgraph Logic["Control Logic"]
       F_TU101["If TU-101 < Max → P101 ON"]
       F_FT101["If FT-101 > Min → P101 ON"]
-      F_PT101["If PT-101 in Range → P102 ON"]
+      F_PT101["If PT-101, FT102, PT102 in Range → P102, P104, P105, P106 ON"]
       F_LT101["If LT-101 > Min → P103 ON"]
       F_LT102["If LT-102 < Max → P106 ON"]
       F_ALARM["If any alarm → ALM101 ON"]
@@ -142,12 +140,21 @@ flowchart
       F_VALVE["If B active → V101 ON"]
     end
     TU101 --value--> F_TU101
+    TU101 --value--> F_ALARM
     FT101 --value--> F_FT101
+    FT101 --value--> F_ALARM
     PT101 --value--> F_PT101
-    LT101 --value--> F_LT101
-    LT102 --value--> F_LT102
+    PT101 --value--> F_ALARM
     FT102 --value--> F_PT101
+    FT102 --value--> F_ALARM
     PT102 --value--> F_PT101
+    PT102 --value--> F_ALARM
+    LT101 --value--> F_LT101
+    LT101 --value--> F_ALARM
+    LT102 --value--> F_LT102
+    LT102 --value--> F_ALARM
+    D --state--> F_UV
+    B --state--> F_VALVE
     F_TU101 --logic--> P101
     F_FT101 --logic--> P101
     F_PT101 --logic--> P102
@@ -174,8 +181,7 @@ flowchart
     end
     V101 --controls--> B
     UV101 --disinfects--> D
-    ALM101 --alerts--> Logic
-
+    ALM101 --alerts--> F_VALVE
 ```
 
 *Legend (based on I/O Table):*
