@@ -1,25 +1,63 @@
 # Desalination System Flowchart (Mermaid)
 
 ```mermaid
-flowchart LR
-    %% Main process flow
-    A[Seawater Intake] -->|P-101| B[Pre-treatment\nFiltration and Sediment Removal]
-    B -->|P-102| C[RO Membrane\nDesalination]
-    C -->|P-103| D[Post-treatment\nMineralization and Disinfection]
-    D -->|P-104| E[Ground Tank]
-    E -->|P-103| F[Pump Room]
-    F -->|P-105| G[Roof Tank]
-    G --> H[Consumption]
+---
+config:
+  layout: elk
+  theme: base
+---
+flowchart
+    %% Main process flow with actuator blocks
+    A[Seawater Intake]
+    P101[P-101 Seawater Intake Pump]
+    B[Pre-treatment\nFiltration and Sediment Removal]
+    P102[P-102 RO High-Pressure Pump]
+    C[RO Membrane\nDesalination]
+    P103[P-103 Post-treatment Pump]
+    D[Post-treatment\nMineralization and Disinfection]
+    P104[P-104 Transfer Pump to Ground Tank]
+    E[Ground Tank]
+    P105[P-105 Pump to Rooftop]
+    F[Pump Room]
+    P106[P-106 Transfer Pump to Roof Tank]
+    G[Roof Tank]
+    H[Consumption]
+
+    %% Connect process flow through actuator blocks
+    A --> P101 --> B --> P102 --> C --> P103 --> D --> P104 --> E --> P105 --> F --> P106 --> G --> H
 
     %% Sensors (measure process, send signal to PLC)
     subgraph Sensors
-      TU101["TU-101\nTurbidity Sensor"]
-      FT101["FT-101\nIntake Flow Transmitter"]
-      FT102["FT-102\nRO Permeate Flow Transmitter"]
-      PT101["PT-101\nRO Feed Pressure Transmitter"]
-      PT102["PT-102\nRO Permeate Pressure Transmitter"]
-      LT101["LT-101\nGround Tank Level Transmitter"]
-      LT102["LT-102\nRoof Tank Level Transmitter"]
+      TU101["TU-101 Turbidity Sensor"]
+      FT101["FT-101 Intake Flow Transmitter"]
+      FT102["FT-102 RO Permeate Flow Transmitter"]
+      PT101["PT-101 RO Feed Pressure Transmitter"]
+      PT102["PT-102 RO Permeate Pressure Transmitter"]
+      LT101["LT-101 Ground Tank Level Transmitter"]
+      LT102["LT-102 Roof Tank Level Transmitter"]
+    end
+    B -.-> TU101
+    A -.-> FT101
+    C -.-> FT102
+    C -.-> PT101
+    C -.-> PT102
+    E -.-> LT101
+    G -.-> LT102
+
+    %% PLC/HMI block
+    PLC["PLC / HMI / SCADA"]
+
+    %% Actuators (controlled by PLC)
+    subgraph Actuators
+      P101
+      P102
+      P103
+      P104
+      P105
+      P106
+      V101["V-101...V-106 Motorized Valves"]
+      UV101["UV-101 UV Disinfection"]
+      ALM101["ALM-101 General Alarm"]
     end
     TU101 --4-20mA--> PLC
     FT101 --4-20mA--> PLC
@@ -28,44 +66,22 @@ flowchart LR
     PT102 --4-20mA--> PLC
     LT101 --4-20mA--> PLC
     LT102 --4-20mA--> PLC
-
-    %% PLC/HMI block
-    PLC["PLC / HMI / SCADA"]
-
-    %% Actuators (controlled by PLC)
-    subgraph Actuators
-      P101["P-101\nSeawater Intake Pump"]
-      P102["P-102\nRO High-Pressure Pump"]
-      P103["P-103\nTransfer Pump to Roof"]
-      P104["P-104\n(Spare/Unused)"]
-      P105["P-105\nPump to Rooftop"]
-      V101["V-101...V-106\nMotorized Valves"]
-      UV101["UV-101\nUV Disinfection"]
-      ALM101["ALM-101\nGeneral Alarm"]
-    end
     PLC --DO/AO--> P101
     PLC --DO/AO--> P102
     PLC --DO/AO--> P103
     PLC --DO/AO--> P104
     PLC --DO/AO--> P105
+    PLC --DO/AO--> P106
     PLC --DO--> V101
     PLC --DO--> UV101
     PLC --DO--> ALM101
 
-    %% Sensors measure process points (flipped arrows)
-    B -.-> TU101
-    A -.-> FT101
-    C -.-> FT102
-    C -.-> PT101
-    C -.-> PT102
-    E -.-> LT101
-    G -.-> LT102
 ```
 
 *Legend (based on I/O Table):*
 - **Sensors**: Measure process variables, send 4–20 mA signals to PLC
 - **PLC/HMI/SCADA**: Receives sensor inputs, controls actuators
-- **Actuators**: Receive commands from PLC (DO/AO)
+- **Actuators**: Shown as blocks in the process pipeline, receive commands from PLC (DO/AO)
 - **Dashed arrows**: Sensor measurement points (from process to sensor)
 - **Solid arrows**: Water/process flow
 - **Arrows labeled 4-20mA/DO/AO**: Signal direction
