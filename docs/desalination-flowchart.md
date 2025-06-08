@@ -59,6 +59,7 @@ flowchart
       V101["V-101...V-106 Motorized Valves"]
       UV101["UV-101 UV Disinfection"]
       ALM101["ALM-101 General Alarm"]
+      PRV101["PRV-101 Pressure Relief Valve"]
     end
     TU101 --4-20mA--> PLC
     FT101 --4-20mA--> PLC
@@ -76,9 +77,12 @@ flowchart
     PLC --DO--> V101
     PLC --DO--> UV101
     PLC --DO--> ALM101
+    PLC --DO--> PRV101
     V101 --controls--> B
     UV101 --disinfects--> D
     ALM101 --alerts--> PLC
+    C --overpressure--> PRV101
+    PRV101 --to Brine/Drain--> DRAIN[Brine/Drain]
 ```
 
 # Desalination System Flowchart (Detailed Control & Logic)
