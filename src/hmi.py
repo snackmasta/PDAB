@@ -72,9 +72,11 @@ class DesalinationHMI:
         # Add control buttons
         frame_ctrl = tk.LabelFrame(self.root, text="Controls", padx=10, pady=5, font=("Arial", 11, "bold"))
         frame_ctrl.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
-        tk.Button(frame_ctrl, text="Start", width=10, command=self.start_system).grid(row=0, column=0, padx=5)
+        self.start_btn = tk.Button(frame_ctrl, text="Start", width=10, command=self.start_system)
+        self.start_btn.grid(row=0, column=0, padx=5)
         tk.Button(frame_ctrl, text="Stop", width=10, command=self.stop_system).grid(row=0, column=1, padx=5)
-        tk.Button(frame_ctrl, text="Emergency", width=10, command=self.emergency_stop).grid(row=0, column=2, padx=5)
+        self.emergency_btn = tk.Button(frame_ctrl, text="Emergency", width=10, command=self.emergency_stop)
+        self.emergency_btn.grid(row=0, column=2, padx=5)
         tk.Button(frame_ctrl, text="Drain Roof Tank", width=15, command=self.drain_roof_tank).grid(row=0, column=3, padx=5)
         # Add PRV101 label only if not already present
         if 'prv101' not in self.labels:
@@ -87,9 +89,16 @@ class DesalinationHMI:
 
     def update(self, step):
         status = self.system.get_status()
-        self.vars['step'].set(f"Step {step+1}")
+        # Set a more meaningful title
+        if getattr(self.system, 'emergency', False):
+            self.vars['step'].set("SYSTEM STOPPED - EMERGENCY")
+        elif getattr(self.system, 'running', False):
+            self.vars['step'].set("SYSTEM RUNNING")
+        else:
+            self.vars['step'].set("Desalination System Ready")
         for k in self.vars:
-            self.vars[k].set(status.get(k, 'OFF'))
+            if k != 'step':
+                self.vars[k].set(status.get(k, 'OFF'))
         c = self.system.config
         # Only set label color if label exists
         for label_key in self.labels:
@@ -110,6 +119,9 @@ class DesalinationHMI:
         self.root.update()
 
     def start_system(self):
+        # Prevent start if emergency is active
+        if getattr(self.system, 'emergency', False):
+            return
         self.system.start()
         self._run_loop()
 
@@ -118,7 +130,39 @@ class DesalinationHMI:
 
     def emergency_stop(self):
         self.system.emergency_stop()
+        # Explicitly set all actuator status variables to OFF in the GUI
+        for key in [
+            'intake', 'ro', 'transfer', 'p103', 'p104', 'p105', 'p106',
+            'v101', 'uv101', 'alm101', 'prv101'
+        ]:
+            self.vars[key].set('OFF')
+        # Also forcibly set the underlying process attributes to False
+        self.system.intake_pump = False
+        self.system.ro_pump = False
+        self.system.transfer_pump = False
+        self.system.p103 = False
+        self.system.p104 = False
+        self.system.p105 = False
+        self.system.p106 = False
+        self.system.v101 = False
+        self.system.uv101 = False
+        self.system.alm101 = False
+        self.system.prv101 = False
         self.update(-1)
+        # Disable Start button until emergency is cleared
+        self.start_btn.config(state='disabled')
+        self.emergency_btn.config(text='Reset Emergency', width=18, command=self.reset_emergency)
+        self.vars['step'].set("SYSTEM STOPPED - EMERGENCY")
+
+    def reset_emergency(self):
+        # Clear emergency and alarm, re-enable Start button
+        self.system.alarm = False
+        self.system.emergency = False
+        self.update(-1)
+        self.start_btn.config(state='normal')
+        self.emergency_btn.config(text='Emergency', width=10, command=self.emergency_stop)
+        # Restore title to normal
+        self.vars['step'].set("Desalination System Ready")
 
     def drain_roof_tank(self):
         self.system.drain_roof_tank()
