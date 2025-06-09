@@ -6,6 +6,8 @@ from matplotlib.figure import Figure
 import numpy as np
 from collections import deque
 import time
+from PIL import Image, ImageTk
+import os
 
 class DesalinationHMI:
     def __init__(self, root, system: DesalinationSystem):
@@ -186,6 +188,56 @@ class DesalinationHMI:
         self.alarm_frame = alarm_frame
         self.proc_frame = proc_frame
         self.trends_frame = trends_frame
+
+        # --- PDAB.png Image Embedding (inside main_content, right of Process Data) ---
+        # Try both script-relative and cwd for PDAB.png
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path1 = os.path.abspath(os.path.join(script_dir, '..', 'PDAB.png'))
+        image_path2 = os.path.abspath(os.path.join(os.getcwd(), 'PDAB.png'))
+        pdab_img = None
+        for image_path in [image_path1, image_path2]:
+            try:
+                pdab_img = Image.open(image_path)
+                break
+            except Exception:
+                continue
+        if pdab_img:
+            # Use LANCZOS resampling for compatibility with new Pillow
+            try:
+                resample = Image.Resampling.LANCZOS
+            except AttributeError:
+                resample = Image.LANCZOS            # Dynamically size the image to fit the available space in main_content
+            main_content.update_idletasks()
+            # Calculate available space more accurately
+            # Get window width and subtract space used by other columns
+            window_width = self.root.winfo_width()
+            if window_width < 100:  # Window not yet rendered
+                window_width = 1200  # Default window width
+            
+            # Estimate space used by other components (Components, Alarms, Process Data)
+            used_width = 300 + 200 + 180 + 40  # Approximate widths + padding
+            available_width = max(window_width - used_width, 300)  # Minimum 300px
+            
+            # Use a larger height target
+            target_height = 250  # Increased from 180
+            max_width = available_width - 20  # Leave some padding
+            
+            # Maintain aspect ratio
+            aspect = pdab_img.width / pdab_img.height
+            target_width = min(int(target_height * aspect), max_width)
+            
+            # If width-constrained, recalculate height
+            if target_width == max_width:
+                target_height = int(max_width / aspect)
+            pdab_img = pdab_img.resize((target_width, target_height), resample)
+            self.pdab_photo = ImageTk.PhotoImage(pdab_img)
+            self.pdab_img_label = tk.Label(main_content, image=self.pdab_photo, bg="#e6e6e6", borderwidth=2, relief="groove")
+            self.pdab_img_label.grid(row=0, column=3, sticky='nsew', padx=(10,5), pady=2)
+            # Allow the image column to expand
+            main_content.grid_columnconfigure(3, weight=1)
+        else:
+            self.pdab_img_label = tk.Label(main_content, text="[PDAB.png not found]", bg="#e6e6e6", fg="red")
+            self.pdab_img_label.grid(row=0, column=3, sticky='nsew', padx=(10,5), pady=2)
 
     def set_label_color(self, label, value, normal_color, alarm_color, alarm_cond):
         label.config(fg=alarm_color if alarm_cond else normal_color)

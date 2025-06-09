@@ -17,12 +17,16 @@ class TrendGraphDemo:
         self.config = SystemConfig()
         self.system = DesalinationSystem(self.config)
         self.root = tk.Tk()
+        self.root.title("Desalination System - Trend Graphs Test")
+        self.root.configure(bg="#e6e6e6")
+        
+        # Initialize HMI with our system
         self.hmi = DesalinationHMI(self.root, self.system)
         self.demo_running = False
         
         # Add demo control buttons
         self.add_demo_controls()
-        
+    
     def add_demo_controls(self):
         """Add demo control buttons to test different scenarios"""
         demo_frame = tk.Frame(self.root, bg="#f0f0f0", pady=10)
