@@ -286,55 +286,14 @@ Sistem PDAB memiliki batas yang jelas untuk menentukan area cakupan dan tanggung
 
 ## 2.5 Karakteristik Ruang Lingkup Sistem
 
-### 2.5.1 Kapasitas dan Parameter Kinerja
-
 #### a) Parameter Rancangan
-- **Rancangan Hidrolik**: Dioptimalkan untuk efisiensi energi
-  - Pemilihan pompa berdasarkan kurva sistem
-  - Ukuran pipa untuk kecepatan optimal
-  - Minimisasi kehilangan tekanan
-
-- **Rancangan Proses**: Optimisasi kinerja membran
-  - Laju fluks: 15-20 L/m²/jam
-  - Optimisasi pemulihan berdasarkan kualitas air umpan
-  - Frekuensi pembersihan: Bulanan atau berdasarkan kinerja
+Parameter rancangan meliputi optimasi hidrolik untuk efisiensi energi (pemilihan pompa sesuai kurva sistem, ukuran pipa optimal, minimisasi kehilangan tekanan) dan optimasi proses membran (laju fluks 15-20 L/m²/jam, pemulihan disesuaikan kualitas air umpan, pembersihan bulanan atau sesuai kinerja).
 
 #### b) Pemantauan Kinerja
-- **Indikator Kinerja Utama**:
-  - Konsumsi energi spesifik (kWh/m³)
-  - Tingkat pemulihan air (%)
-  - Ketersediaan sistem (%)
-  - Kepatuhan kualitas air produk (%)
-
-- **Metrik Operasional**:
-  - Laju alir di semua titik pengukuran
-  - Perbedaan tekanan di komponen utama
-  - Konsumsi daya per bagian sistem
-  - Tingkat konsumsi bahan kimia
+Pemantauan kinerja dilakukan melalui indikator utama seperti konsumsi energi spesifik (kWh/m³), tingkat pemulihan air, ketersediaan sistem, dan kepatuhan kualitas air produk. Metrik operasional meliputi laju alir di seluruh titik ukur, perbedaan tekanan di komponen utama, konsumsi daya per bagian sistem, serta tingkat konsumsi bahan kimia.
 
 ### 2.5.2 Fleksibilitas dan Skalabilitas
-
-#### a) Pendekatan Rancangan Modular
-- **Modularitas Proses**: Operasi bagian sistem independen
-  - Setiap bagian sistem dapat dioperasikan secara terpisah
-  - Redundansi untuk komponen kritis
-  - Kemampuan ekspansi dengan modul tambahan
-
-- **Skalabilitas Sistem Kontrol**: Arsitektur dapat diperluas
-  - Modul I/O tambahan dapat ditambahkan
-  - Ekspansi jaringan untuk perangkat tambahan
-  - Skalabilitas perangkat lunak untuk fitur lanjutan
-
-#### b) Ketentuan Ekspansi Masa Depan
-- **Ekspansi Kapasitas**: Ketentuan ruang dan utilitas
-  - Pekerjaan sipil dirancang untuk kapasitas 200%
-  - Infrastruktur listrik untuk beban masa depan
-  - Kapasitas sistem kontrol untuk peralatan tambahan
-
-- **Peningkatan Teknologi**: Rancangan tahan masa depan
-  - Protokol komunikasi standar
-  - Komponen dapat diganti dengan antarmuka standar
-  - Dokumentasi untuk prosedur modifikasi
+Pendekatan modular dan skalabilitas sistem kontrol didukung secara terbatas pada simulasi, namun ekspansi kapasitas, infrastruktur listrik masa depan, serta peningkatan teknologi (protokol komunikasi standar, antarmuka standar, dokumentasi modifikasi) tidak diimplementasikan dalam program dan dihapus dari ruang lingkup.
 
 ## 2.6 Standar dan Compliance
 
@@ -517,26 +476,6 @@ Melalui kombinasi definisi batasan yang jelas, spesifikasi teknis komprehensif, 
 
 ## 2.10 Lampiran: Flowchart dan Diagram Ruang Lingkup Sistem
 
-Ruang lingkup sistem PDAB divisualisasikan melalui berbagai jenis diagram yang masing-masing memberikan perspektif berbeda terhadap cakupan dan batasan sistem. Setiap diagram alir dirancang untuk menjelaskan aspek spesifik dari ruang lingkup sistem, mulai dari batasan fisik hingga cakupan operasional.
-
-### Analisis Diagram Alir Ruang Lingkup Proses
-
-Diagram alir menggambarkan ruang lingkup dari sistem dengan fokus pada batasan dan area cakupan yang sesuai dengan implementasi aktual. Diagram ini dirancang untuk memudahkan pemahaman ruang lingkup dan tanggung jawab masing-masing bagian sistem dalam sistem simulasi.
-
-Batasan ruang lingkup divisualisasikan dimulai dari batasan pengambilan hingga batasan distribusi. Setiap tahap dalam ruang lingkup dilengkapi dengan definisi dari batasan input/output dan cakupan tanggung jawab yang sesuai dengan implementasi sistem.
-
-### Diagram Alir Batasan Sistem dan Antarmuka
-
-Diagram kedua menyajikan tampilan detail terhadap batasan sistem dan antarmuka dengan sistem eksternal. Diagram ini menunjukkan dengan jelas apa yang termasuk dan dikecualikan dari ruang lingkup sistem.
-
-Ruang lingkup internal mencakup semua komponen yang menjadi tanggung jawab langsung sistem PDAB. Antarmuka eksternal menunjukkan titik-titik dimana sistem berinteraksi dengan utilitas eksternal dan sistem. Ruang lingkup yang dikecualikan didefinisikan dengan jelas untuk menghindari ketidakjelasan dalam implementasi proyek.
-
-### Diagram Area Cakupan dan Matriks Tanggung Jawab
-
-Diagram ketiga memberikan perspektif matriks tanggung jawab, menunjukkan distribusi tanggung jawab di berbagai komponen sistem dan pemangku kepentingan.
-
-Batasan tanggung jawab terbagi berdasarkan area fungsional dengan penugasan kepemilikan yang jelas. Batasan perawatan menunjukkan ruang lingkup perawatan untuk masing-masing bagian sistem. Batasan operasional menentukan otoritas dan tanggung jawab dalam operasi harian.
-
 ### Diagram Alir Ruang Lingkup: Batasan Sistem
 
 ```mermaid
@@ -550,7 +489,6 @@ flowchart
     END([Distribution Boundary])
     style START fill:#b3d1ff,stroke:#2e8b57,stroke-width:3px
     style END fill:#b6fcb6,stroke:#2e8b57,stroke-width:3px
-    
     START --> A[Seawater Source]
     A --> B[Raw Water Intake System]
     B --> C[Pre-treatment Facility]
@@ -724,31 +662,3 @@ flowchart LR
     style External fill:#ffebee
     style Interface fill:#f3e5f5
 ```
-
-*Diagram ini menunjukkan dengan jelas batasan sistem antara ruang lingkup internal dan antarmuka eksternal, serta tanggung jawab dalam integrasi dengan sistem eksternal.*
-
-## Validasi dan Verifikasi Ruang Lingkup
-
-### Validasi Ruang Lingkup
-
-Ruang lingkup sistem PDAB telah disesuaikan dengan implementasi aktual untuk memastikan akurasi dokumentasi. Definisi batasan telah diverifikasi sesuai dengan komponen yang benar-benar diimplementasikan dalam sistem simulasi. Spesifikasi teknis telah disesuaikan untuk memastikan kesesuaian dengan implementasi aktual.
-
-### Manajemen Ruang Lingkup
-
-Indikator Kinerja Utama untuk manajemen ruang lingkup mencakup akurasi implementasi yang memastikan semua aspek dalam ruang lingkup sistem sesuai dengan implementasi aktual. Definisi tanggung jawab yang jelas untuk menghindari kesenjangan dalam dokumentasi. Manajemen antarmuka yang memastikan konsistensi antara dokumentasi dan implementasi sistem.
-
-### 2.10.4 Optimisasi Ruang Lingkup Berkelanjutan
-
-Ruang lingkup sistem disesuaikan berdasarkan implementasi aktual dan kebutuhan pembelajaran. Dokumentasi diperbarui untuk mencerminkan komponen yang benar-benar diimplementasikan dalam sistem simulasi.
-
-#### a) Optimisasi Kinerja
-- **Efisiensi Operasional**: Pemantauan berkelanjutan untuk optimisasi proses
-- **Manajemen Energi**: Pemantauan dan optimisasi konsumsi daya
-- **Pemanfaatan Sumber Daya**: Penggunaan efisien air, bahan kimia, dan energi
-
-#### b) Integrasi Teknologi
-- **Transformasi Digital**: Integrasi IoT untuk manajemen air pintar
-- **Analitik Data**: Analitik lanjutan untuk perawatan prediktif
-- **Peningkatan Otomasi**: Otomasi proses untuk keunggulan operasional
-
-*Diagram alir dan diagram dalam lampiran ini menunjukkan dengan jelas batasan sistem antara ruang lingkup internal dan antarmuka eksternal, serta tanggung jawab dalam integrasi dengan sistem eksternal, memberikan tampilan komprehensif terhadap ruang lingkup sistem PDAB yang terpadu dan terdefinisi dengan baik.*
