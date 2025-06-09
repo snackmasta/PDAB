@@ -133,29 +133,30 @@ flowchart TD
 ### Hardware Siteplan
 
 ```mermaid
-block-beta
-  columns 3
-  SeawaterIntake["Seawater Intake Structure"] PreTreatment["Pre-treatment Unit"] ROUnit["RO Desalination Unit"]
-  GroundTank["Ground Storage Tank"] PostTreatment["Post-treatment Unit"] PumpRoom["Pump Room"]
-  RoofTank["Rooftop Storage Tank"] Building["Building/Distribution"]
-  
-  SeawaterIntake --> PreTreatment
-  PreTreatment --> ROUnit
-  ROUnit --> PostTreatment
-  PostTreatment --> GroundTank
-  GroundTank --> PumpRoom
-  PumpRoom --> RoofTank
-  RoofTank --> Building
-  
-  style SeawaterIntake fill:#b3d1ff,stroke:#333,stroke-width:2px
-  style PreTreatment fill:#e6ffe6,stroke:#333,stroke-width:2px
-  style ROUnit fill:#fff2cc,stroke:#333,stroke-width:2px
-  style PostTreatment fill:#ffe6e6,stroke:#333,stroke-width:2px
-  style GroundTank fill:#d9d9d9,stroke:#333,stroke-width:2px
-  style PumpRoom fill:#f2e6ff,stroke:#333,stroke-width:2px
-  style RoofTank fill:#d1e0e0,stroke:#333,stroke-width:2px
-  style Building fill:#f9f9f9,stroke:#333,stroke-width:2px
+flowchart LR
+    Intake["Seawater Intake Structure"] --"Raw Seawater"--> Pretreat["Pre-treatment Unit"] 
+    Pretreat --"Filtered Water"--> RO["RO Desalination Unit"]
+    RO --"Permeate (Fresh Water)"--> Post["Post-treatment Unit"]
+    Post --"Treated Fresh Water"--> Ground["Ground Storage Tank"]
+    Ground --"Water Transfer"--> Pump["Pump Room"]
+    Pump --"Pressurized Water"--> Roof["Rooftop Storage Tank"]
+    Roof --"Distribution"--> Building["Building/Distribution"]
+    
+    %% Waste streams
+    RO -.->|"Brine/Concentrate"| Waste["Waste Discharge"]
+    
+    style Intake fill:#b3d1ff,stroke:#333,stroke-width:2px
+    style Pretreat fill:#e6ffe6,stroke:#333,stroke-width:2px
+    style RO fill:#fff2cc,stroke:#333,stroke-width:2px
+    style Post fill:#ffe6e6,stroke:#333,stroke-width:2px
+    style Ground fill:#d9d9d9,stroke:#333,stroke-width:2px
+    style Pump fill:#f2e6ff,stroke:#333,stroke-width:2px
+    style Roof fill:#d1e0e0,stroke:#333,stroke-width:2px
+    style Building fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Waste fill:#ffcccc,stroke:#333,stroke-width:2px
 ```
+
+*Diagram siteplan ini menampilkan hubungan antar unit utama pada sistem desalinasi sesuai layout fisik dan alur proses air.*
 
 ### Flowchart Model: Fungsi dan Hubungan PLC dalam Sistem Desalinasi
 
