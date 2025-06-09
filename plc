@@ -16,15 +16,20 @@ VAR
     // Digital/Analog Outputs
     P_101 : BOOL; // Seawater Intake Pump
     P_102 : BOOL; // RO High-Pressure Pump
-    P_103 : BOOL; // Transfer Pump to Roof
+    P_103 : BOOL; // Post-treatment Pump (matches HMI)
     P_104 : BOOL; // Transfer Pump to Ground Tank
     P_105 : BOOL; // Pump to Rooftop
     P_106 : BOOL; // Transfer Pump to Roof Tank
-    V_101, V_102, V_103, V_104, V_105, V_106 : BOOL; // Valves
+    V_101 : BOOL; // Motorized Valve (primary valve - matches HMI)
+    V_102, V_103, V_104, V_105, V_106 : BOOL; // Additional Valves
     UV_101 : BOOL; // UV Disinfection
     ALM_101 : BOOL; // General Alarm
     PRV_101 : BOOL; // Pressure Relief Valve
 
+    // System Control Variables (to match HMI logic)
+    System_Running : BOOL; // System running state
+    Emergency_Stop : BOOL; // Emergency stop active
+    
     // Expanded Internal
     PreTreatment_OK : BOOL;
     RO_OK : BOOL;
@@ -37,51 +42,82 @@ VAR
     PRV_FAULT : BOOL;
 END_VAR
 
-// Pre-treatment logic
-PreTreatment_OK := (TU_101 < 5.0); // Example: turbidity < 5 NTU
+// System Emergency/Start/Stop Logic (matches HMI implementation)
+IF Emergency_Stop THEN
+    P_101 := FALSE;
+    P_102 := FALSE;
+    P_103 := FALSE;
+    P_104 := FALSE;
+    P_105 := FALSE;
+    P_106 := FALSE;
+    V_101 := FALSE;
+    UV_101 := FALSE;
+    ALM_101 := TRUE;
+    PRV_101 := FALSE;
+    System_Running := FALSE;
+ELSIF NOT System_Running THEN
+    // If not running, all pumps and actuators should be OFF
+    P_101 := FALSE;
+    P_102 := FALSE;
+    P_103 := FALSE;
+    P_104 := FALSE;
+    P_105 := FALSE;
+    P_106 := FALSE;
+    V_101 := FALSE;
+    UV_101 := FALSE;
+    ALM_101 := FALSE;
+    PRV_101 := FALSE;
+ELSE
+    // Normal operation logic (when System_Running = TRUE and Emergency_Stop = FALSE)
+    
+    // Pre-treatment logic (matches HMI - TURBIDITY_MAX = 5.0)
+    PreTreatment_OK := (TU_101 < 5.0);
 
-// RO logic
-RO_OK := PreTreatment_OK AND (LT_101 > 20.0) AND (PT_101 > 50.0) AND (PT_101 < 70.0);
-P_102 := RO_OK;
+    // RO logic (matches HMI - PRESSURE_MIN = 50.0, PRESSURE_MAX = 70.0)
+    RO_OK := PreTreatment_OK AND (LT_101 > 20.0) AND (PT_101 > 50.0) AND (PT_101 < 70.0);
+    P_102 := RO_OK;
 
-// Intake pump logic
-P_101 := RO_OK AND (LT_101 < 95.0);
+    // Intake pump logic (matches HMI - GROUND_TANK_MAX = 95.0)
+    P_101 := RO_OK AND (LT_101 < 95.0);
 
-// Post-treatment logic
-PostTreatment_OK := RO_OK;
-UV_101 := PostTreatment_OK;
+    // Post-treatment logic
+    PostTreatment_OK := RO_OK;
+    UV_101 := RO_OK; // UV on if RO is running (matches HMI logic)
 
-// Post-treatment pump (P-103)
-P103_OK := (LT_101 > 30.0);
-P_103 := P103_OK;
+    // Post-treatment pump (P-103) - matches HMI logic
+    P103_OK := (LT_101 > 30.0);
+    P_103 := P103_OK;
 
-// Transfer Pump to Ground Tank (P-104)
-P104_OK := RO_OK AND (LT_101 < 95.0);
-P_104 := P104_OK;
+    // Transfer Pump to Ground Tank (P-104) - matches HMI logic
+    P104_OK := RO_OK AND (LT_101 < 95.0);
+    P_104 := P104_OK;
 
-// Pump to Rooftop (P-105)
-P105_OK := (LT_101 > 40.0) AND (LT_102 < 95.0);
-P_105 := P105_OK;
+    // Pump to Rooftop (P-105) - matches HMI logic
+    P105_OK := (LT_101 > 40.0) AND (LT_102 < 95.0);
+    P_105 := P105_OK;
 
-// Transfer Pump to Roof Tank (P-106)
-P106_OK := (LT_102 < 98.0);
-P_106 := P106_OK;
+    // Transfer Pump to Roof Tank (P-106) - matches HMI logic
+    P106_OK := (LT_102 < 98.0);
+    P_106 := P106_OK;
 
-// PRV-101 logic: open if RO feed pressure is above max safe value or fault
-PRV_FAULT := (PT_101 > 70.0) OR Alarm;
-PRV_101 := PRV_FAULT;
+    // PRV-101 logic: open if RO feed pressure is above max safe value (matches HMI)
+    PRV_FAULT := (PT_101 > 70.0);
+    PRV_101 := PRV_FAULT;
 
-// Alarms
-Alarm := (TU_101 > 10.0) OR (PT_101 < 45.0) OR (PT_101 > 75.0) OR (LT_101 < 10.0) OR (LT_102 > 98.0);
-ALM_101 := Alarm;
+    // Alarms (matches HMI logic)
+    Alarm := (TU_101 > 10.0) OR (PT_101 < 45.0) OR (PT_101 > 75.0) OR (LT_101 < 10.0) OR (LT_102 > 98.0);
+    ALM_101 := Alarm;
 
-// Valve logic (example: open if any related pump is on)
-V_101 := P_101 OR P_102;
-V_102 := P_102;
-V_103 := P_103;
-V_104 := P_104;
-V_105 := P_105;
-V_106 := P_106;
-// ... add more detailed valve logic as needed
+    // Valve logic (matches HMI - only V_101 is controlled)
+    V_101 := P_101 OR P_102; // Example: open valve if intake or RO pump is on
+    
+    // Additional valves (optional logic for future expansion)
+    V_102 := P_102;
+    V_103 := P_103;
+    V_104 := P_104;
+    V_105 := P_105;
+    V_106 := P_106;
+    
+END_IF;
 
 END_PROGRAM
