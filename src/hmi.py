@@ -1,91 +1,215 @@
 import tkinter as tk
 from process import DesalinationSystem
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import numpy as np
+from collections import deque
+import time
 
 class DesalinationHMI:
     def __init__(self, root, system: DesalinationSystem):
         self.root = root
         self.system = system
-        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm','p103','p104','p105','p106','v101','uv101','alm101','prv101']}
+        self.vars = {k: tk.StringVar() for k in ['step','ground','roof','turb','press','intake','ro','transfer','alarm','p103','p104','p105','p106','v101','uv101','alm101','prv101','production_rate','total_produced','efficiency']}
         self.labels = {}
+        self.status_indicators = {}
+        
+        # Trend data storage
+        self.max_trend_points = 50  # Keep last 50 data points
+        self.trend_data = {
+            'time': deque(maxlen=self.max_trend_points),
+            'ground_level': deque(maxlen=self.max_trend_points),
+            'roof_level': deque(maxlen=self.max_trend_points),
+            'pressure': deque(maxlen=self.max_trend_points)
+        }
+        self.start_time = time.time()
+        
         self._build_gui()
 
     def _build_gui(self):
-        self.root.title("Desalination System SCADA HMI Simulation")
-        frame_tanks = tk.LabelFrame(self.root, text="Tank Levels", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_tanks.grid(row=1, column=0, padx=10, pady=5, sticky='ew')
-        frame_proc = tk.LabelFrame(self.root, text="Process Values", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_proc.grid(row=2, column=0, padx=10, pady=5, sticky='ew')
-        frame_pumps = tk.LabelFrame(self.root, text="Pump Status", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_pumps.grid(row=3, column=0, padx=10, pady=5, sticky='ew')
-        frame_alarm = tk.LabelFrame(self.root, text="Alarm", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_alarm.grid(row=4, column=0, padx=10, pady=5, sticky='ew')
-        # Add control buttons
-        frame_ctrl = tk.LabelFrame(self.root, text="Controls", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_ctrl.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
-        tk.Label(self.root, textvariable=self.vars['step'], font=("Arial", 14, "bold")).grid(row=0, column=0, pady=5)
-        self.labels['ground'] = tk.Label(frame_tanks, text="Ground Tank Level:", font=("Arial", 11))
-        self.labels['ground'].grid(row=0, column=0, sticky='e')
-        tk.Label(frame_tanks, textvariable=self.vars['ground'], font=("Arial", 11)).grid(row=0, column=1, sticky='w')
-        self.labels['roof'] = tk.Label(frame_tanks, text="Roof Tank Level:", font=("Arial", 11))
-        self.labels['roof'].grid(row=1, column=0, sticky='e')
-        tk.Label(frame_tanks, textvariable=self.vars['roof'], font=("Arial", 11)).grid(row=1, column=1, sticky='w')
-        self.labels['turb'] = tk.Label(frame_proc, text="Turbidity:", font=("Arial", 11))
-        self.labels['turb'].grid(row=0, column=0, sticky='e')
-        tk.Label(frame_proc, textvariable=self.vars['turb'], font=("Arial", 11)).grid(row=0, column=1, sticky='w')
-        self.labels['press'] = tk.Label(frame_proc, text="RO Feed Pressure:", font=("Arial", 11))
-        self.labels['press'].grid(row=1, column=0, sticky='e')
-        tk.Label(frame_proc, textvariable=self.vars['press'], font=("Arial", 11)).grid(row=1, column=1, sticky='w')
-        self.labels['intake'] = tk.Label(frame_pumps, text="Intake Pump:", font=("Arial", 11))
-        self.labels['intake'].grid(row=0, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['intake'], font=("Arial", 11)).grid(row=0, column=1, sticky='w')
-        self.labels['ro'] = tk.Label(frame_pumps, text="RO Pump:", font=("Arial", 11))
-        self.labels['ro'].grid(row=1, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['ro'], font=("Arial", 11)).grid(row=1, column=1, sticky='w')
-        self.labels['transfer'] = tk.Label(frame_pumps, text="Transfer Pump:", font=("Arial", 11))
-        self.labels['transfer'].grid(row=2, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['transfer'], font=("Arial", 11)).grid(row=2, column=1, sticky='w')
-        # Architecture Update: Add new actuators to HMI
-        self.labels['p103'] = tk.Label(frame_pumps, text="Post-treatment Pump:", font=("Arial", 11))
-        self.labels['p103'].grid(row=3, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['p103'], font=("Arial", 11)).grid(row=3, column=1, sticky='w')
-        self.labels['p104'] = tk.Label(frame_pumps, text="Transfer Pump to Ground:", font=("Arial", 11))
-        self.labels['p104'].grid(row=4, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['p104'], font=("Arial", 11)).grid(row=4, column=1, sticky='w')
-        self.labels['p105'] = tk.Label(frame_pumps, text="Pump to Rooftop:", font=("Arial", 11))
-        self.labels['p105'].grid(row=5, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['p105'], font=("Arial", 11)).grid(row=5, column=1, sticky='w')
-        self.labels['p106'] = tk.Label(frame_pumps, text="Transfer Pump to Roof Tank:", font=("Arial", 11))
-        self.labels['p106'].grid(row=6, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['p106'], font=("Arial", 11)).grid(row=6, column=1, sticky='w')
-        self.labels['v101'] = tk.Label(frame_pumps, text="Motorized Valve V101:", font=("Arial", 11))
-        self.labels['v101'].grid(row=7, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['v101'], font=("Arial", 11)).grid(row=7, column=1, sticky='w')
-        self.labels['uv101'] = tk.Label(frame_pumps, text="UV Disinfection:", font=("Arial", 11))
-        self.labels['uv101'].grid(row=8, column=0, sticky='e')
-        tk.Label(frame_pumps, textvariable=self.vars['uv101'], font=("Arial", 11)).grid(row=8, column=1, sticky='w')
-        self.labels['alm101'] = tk.Label(frame_alarm, text="General Alarm:", font=("Arial", 11, "bold"))
-        self.labels['alm101'].grid(row=1, column=0, sticky='e')
-        tk.Label(frame_alarm, textvariable=self.vars['alm101'], font=("Arial", 11, "bold")).grid(row=1, column=1, sticky='w')
-        self.labels['alarm'] = tk.Label(frame_alarm, text="Alarm:", font=("Arial", 11, "bold"))
-        self.labels['alarm'].grid(row=0, column=0, sticky='e')
-        tk.Label(frame_alarm, textvariable=self.vars['alarm'], font=("Arial", 11, "bold")).grid(row=0, column=1, sticky='w')
-        # Add control buttons
-        frame_ctrl = tk.LabelFrame(self.root, text="Controls", padx=10, pady=5, font=("Arial", 11, "bold"))
-        frame_ctrl.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
-        self.start_btn = tk.Button(frame_ctrl, text="Start", width=10, command=self.start_system)
-        self.start_btn.grid(row=0, column=0, padx=5)
-        tk.Button(frame_ctrl, text="Stop", width=10, command=self.stop_system).grid(row=0, column=1, padx=5)
-        self.emergency_btn = tk.Button(frame_ctrl, text="Emergency", width=10, command=self.emergency_stop)
-        self.emergency_btn.grid(row=0, column=2, padx=5)
-        tk.Button(frame_ctrl, text="Drain Roof Tank", width=15, command=self.drain_roof_tank).grid(row=0, column=3, padx=5)
-        # Add PRV101 label only if not already present
-        if 'prv101' not in self.labels:
-            self.labels['prv101'] = tk.Label(frame_pumps, text="Pressure Relief Valve PRV101:", font=("Arial", 11))
-            self.labels['prv101'].grid(row=9, column=0, sticky='e')
-            tk.Label(frame_pumps, textvariable=self.vars['prv101'], font=("Arial", 11)).grid(row=9, column=1, sticky='w')
+        import tkinter.ttk as ttk
+        self.root.title("Desalination System - Compact SCADA HMI")
+        self.root.configure(bg="#e6e6e6")
+
+        # --- System Control Bar ---
+        ctrl_frame = tk.Frame(self.root, bg="#e6e6e6", pady=5)
+        ctrl_frame.grid(row=0, column=0, sticky='ew', padx=5)
+        status_lbl = tk.Label(ctrl_frame, textvariable=self.vars['step'], font=("Arial", 14, "bold"), bg="#e6e6e6", fg="#003366", width=22, anchor='w')
+        status_lbl.pack(side=tk.LEFT, padx=(5, 10))
+        self.start_btn = tk.Button(ctrl_frame, text="START", width=8, command=self.start_system, bg="#d9ead3", font=("Arial", 10, "bold"))
+        self.start_btn.pack(side=tk.LEFT, padx=2)
+        tk.Button(ctrl_frame, text="STOP", width=8, command=self.stop_system, bg="#f4cccc", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=2)
+        self.emergency_btn = tk.Button(ctrl_frame, text="E-STOP", width=8, command=self.emergency_stop, bg="#ea9999", font=("Arial", 10, "bold"))
+        self.emergency_btn.pack(side=tk.LEFT, padx=2)
+        tk.Button(ctrl_frame, text="Drain Roof Tank", width=15, command=self.drain_roof_tank, bg="#cfe2f3").pack(side=tk.LEFT, padx=10)
+        # Mode checkboxes (placeholders)
+        tk.Checkbutton(ctrl_frame, text="Auto Mode", bg="#e6e6e6").pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(ctrl_frame, text="Maintenance", bg="#e6e6e6").pack(side=tk.LEFT, padx=5)        # --- System Overview ---
+        overview = tk.Frame(self.root, bg="#f9f9f9", pady=5, padx=5, relief=tk.GROOVE, bd=2)
+        overview.grid(row=1, column=0, sticky='ew', padx=5, pady=(0,5))
+        
+        tk.Label(overview, text="Production Rate", font=("Arial", 10, "bold"), bg="#f9f9f9").grid(row=0, column=0, padx=10)
+        self.production_rate_lbl = tk.Label(overview, textvariable=self.vars['production_rate'], font=("Arial", 10), fg="#009933", bg="#f9f9f9")
+        self.production_rate_lbl.grid(row=1, column=0)
+        
+        tk.Label(overview, text="Total Produced", font=("Arial", 10, "bold"), bg="#f9f9f9").grid(row=0, column=1, padx=10)
+        self.total_produced_lbl = tk.Label(overview, textvariable=self.vars['total_produced'], font=("Arial", 10), fg="#009933", bg="#f9f9f9")
+        self.total_produced_lbl.grid(row=1, column=1)
+        
+        tk.Label(overview, text="Ground Tank", font=("Arial", 10, "bold"), bg="#f9f9f9").grid(row=0, column=2, padx=10)
+        tk.Label(overview, textvariable=self.vars['ground'], font=("Arial", 10), fg="#009933", bg="#f9f9f9").grid(row=1, column=2)
+        
+        tk.Label(overview, text="RO Pressure", font=("Arial", 10, "bold"), bg="#f9f9f9").grid(row=0, column=3, padx=10)
+        tk.Label(overview, textvariable=self.vars['press'], font=("Arial", 10), fg="#009933", bg="#f9f9f9").grid(row=1, column=3)
+        
+        tk.Label(overview, text="Efficiency", font=("Arial", 10, "bold"), bg="#f9f9f9").grid(row=0, column=4, padx=10)
+        self.efficiency_lbl = tk.Label(overview, textvariable=self.vars['efficiency'], font=("Arial", 10), fg="#009933", bg="#f9f9f9")
+        self.efficiency_lbl.grid(row=1, column=4)
+
+        # --- Main Content (Components, Alarms, Process Data) ---
+        main_content = tk.Frame(self.root, bg="#e6e6e6")
+        main_content.grid(row=2, column=0, sticky='ew', padx=5)
+        # Components (left)
+        comp_frame = tk.LabelFrame(main_content, text="Components", font=("Arial", 11, "bold"), bg="#e6e6e6", fg="#003366", padx=8, pady=5)
+        comp_frame.grid(row=0, column=0, sticky='n', padx=(0,10), pady=2)
+        # Pumps
+        pumps_frame = tk.LabelFrame(comp_frame, text="Pumps", font=("Arial", 10, "bold"), bg="#e6e6e6", fg="#003366", padx=5, pady=2)
+        pumps_frame.pack(fill='x', pady=2)
+        actuators = [
+            ('intake', "Intake"),
+            ('ro', "RO"),
+            ('transfer', "Transfer"),
+            ('p103', "Post-treat"),
+            ('p104', "To Ground"),
+            ('p105', "To Rooftop"),
+            ('p106', "To Roof Tank")
+        ]
+        for idx, (key, label) in enumerate(actuators):
+            tk.Label(pumps_frame, text=label, font=("Arial", 10), bg="#e6e6e6").grid(row=idx, column=0, sticky='e')
+            tk.Label(pumps_frame, textvariable=self.vars[key], font=("Arial", 10), bg="#e6e6e6").grid(row=idx, column=1, sticky='w')
+        # Tanks
+        tanks_frame = tk.LabelFrame(comp_frame, text="Tanks", font=("Arial", 10, "bold"), bg="#e6e6e6", fg="#003366", padx=5, pady=2)
+        tanks_frame.pack(fill='x', pady=2)
+        tk.Label(tanks_frame, text="Ground Tank", font=("Arial", 10), bg="#e6e6e6").grid(row=0, column=0, sticky='e')
+        self.ground_pb = ttk.Progressbar(tanks_frame, length=120, maximum=100)
+        self.ground_pb.grid(row=0, column=1, padx=5)
+        self.ground_val_lbl = tk.Label(tanks_frame, textvariable=self.vars['ground'], font=("Arial", 10), bg="#e6e6e6", width=7, anchor='w')
+        self.ground_val_lbl.grid(row=0, column=2, sticky='w', padx=(5,0))
+        tk.Label(tanks_frame, text="Roof Tank", font=("Arial", 10), bg="#e6e6e6").grid(row=1, column=0, sticky='e')
+        self.roof_pb = ttk.Progressbar(tanks_frame, length=120, maximum=100)
+        self.roof_pb.grid(row=1, column=1, padx=5)
+        self.roof_val_lbl = tk.Label(tanks_frame, textvariable=self.vars['roof'], font=("Arial", 10), bg="#e6e6e6", width=7, anchor='w')
+        self.roof_val_lbl.grid(row=1, column=2, sticky='w', padx=(5,0))        # System Alarms (center)
+        alarm_frame = tk.LabelFrame(main_content, text="System Alarms", font=("Arial", 11, "bold"), bg="#e6e6e6", fg="#990000", padx=8, pady=5)
+        alarm_frame.grid(row=0, column=1, sticky='n', padx=(0,10), pady=2)
+        
+        # Store alarm checkboxes for updating
+        self.alarm_checkboxes = {}
+        
+        alarms = [
+            ("Emergency Stop", 'emergency'),
+            ("Low Tank Level", 'low_tank'),
+            ("RO Pressure Fault", 'pressure_fault'),
+            ("System Leak", 'system_leak'),
+            ("High Tank Level", 'high_tank'),
+            ("Pump Fault", 'pump_fault'),
+            ("Water Quality", 'water_quality'),
+            ("General Alarm", 'general_alarm')
+        ]
+        
+        for idx, (label, key) in enumerate(alarms):
+            var = tk.BooleanVar()
+            cb = tk.Checkbutton(alarm_frame, text=label, variable=var, bg="#e6e6e6", 
+                               state='disabled', disabledforeground="#666666")
+            cb.grid(row=idx, column=0, sticky='w')
+            self.alarm_checkboxes[key] = {'var': var, 'widget': cb}
+        
+        # Active alarms summary
+        self.active_alarms_lbl = tk.Label(alarm_frame, text="Active: None", font=("Arial", 10, "italic"), 
+                                         fg="#009933", bg="#e6e6e6")
+        self.active_alarms_lbl.grid(row=len(alarms), column=0, sticky='w', pady=(5,0))
+
+        # Process Data (right)
+        proc_frame = tk.LabelFrame(main_content, text="Process Data", font=("Arial", 11, "bold"), bg="#e6e6e6", fg="#003366", padx=8, pady=5)
+        proc_frame.grid(row=0, column=2, sticky='n', pady=2)
+        tk.Label(proc_frame, text="Water Quality", font=("Arial", 10, "bold"), bg="#e6e6e6").grid(row=0, column=0, sticky='w')
+        tk.Label(proc_frame, text="Turbidity:", font=("Arial", 10), bg="#e6e6e6").grid(row=1, column=0, sticky='e')
+        tk.Label(proc_frame, textvariable=self.vars['turb'], font=("Arial", 10), bg="#e6e6e6").grid(row=1, column=1, sticky='w')
+        tk.Label(proc_frame, text="RO Pressure:", font=("Arial", 10), bg="#e6e6e6").grid(row=2, column=0, sticky='e')
+        tk.Label(proc_frame, textvariable=self.vars['press'], font=("Arial", 10), bg="#e6e6e6").grid(row=2, column=1, sticky='w')        # --- Real-Time Trends ---
+        trends_frame = tk.LabelFrame(self.root, text="Real-Time Trends", font=("Arial", 12, "bold"), fg="#003366", bg="#1a2634", padx=10, pady=5)
+        trends_frame.grid(row=3, column=0, sticky='ew', padx=5, pady=5)
+        
+        # Create matplotlib figure for trends
+        self.trend_fig = Figure(figsize=(14, 4), dpi=80, facecolor='#1a2634')
+        
+        # Create subplots for tank levels and pressure
+        self.tank_level_ax = self.trend_fig.add_subplot(121)
+        self.pressure_ax = self.trend_fig.add_subplot(122)
+        
+        # Configure tank level plot
+        self.tank_level_ax.set_title('Tank Levels (%)', color='white', fontsize=10, fontweight='bold')
+        self.tank_level_ax.set_ylabel('Level (%)', color='white', fontsize=9)
+        self.tank_level_ax.set_xlabel('Time (s)', color='white', fontsize=9)
+        self.tank_level_ax.set_facecolor('#0d1117')
+        self.tank_level_ax.tick_params(colors='white', labelsize=8)
+        self.tank_level_ax.grid(True, alpha=0.3, color='white')
+        self.tank_level_ax.set_ylim(0, 100)
+        
+        # Configure pressure plot
+        self.pressure_ax.set_title('RO Feed Pressure (bar)', color='white', fontsize=10, fontweight='bold')
+        self.pressure_ax.set_ylabel('Pressure (bar)', color='white', fontsize=9)
+        self.pressure_ax.set_xlabel('Time (s)', color='white', fontsize=9)
+        self.pressure_ax.set_facecolor('#0d1117')
+        self.pressure_ax.tick_params(colors='white', labelsize=8)
+        self.pressure_ax.grid(True, alpha=0.3, color='white')
+        self.pressure_ax.set_ylim(0, 80)
+        
+        # Initialize empty line plots
+        self.ground_line, = self.tank_level_ax.plot([], [], 'g-', linewidth=2, label='Ground Tank')
+        self.roof_line, = self.tank_level_ax.plot([], [], 'b-', linewidth=2, label='Roof Tank')
+        self.pressure_line, = self.pressure_ax.plot([], [], 'r-', linewidth=2, label='RO Pressure')
+        
+        # Add legends
+        self.tank_level_ax.legend(loc='upper right', fontsize=8, facecolor='#1a2634', edgecolor='white', labelcolor='white')
+        self.pressure_ax.legend(loc='upper right', fontsize=8, facecolor='#1a2634', edgecolor='white', labelcolor='white')
+        
+        # Embed plots in tkinter
+        self.trend_canvas = FigureCanvasTkAgg(self.trend_fig, trends_frame)
+        self.trend_canvas.get_tk_widget().pack(fill='both', expand=True)
+        self.trend_canvas.draw()
+
+        # Save references for update
+        self.comp_frame = comp_frame
+        self.tanks_frame = tanks_frame
+        self.alarm_frame = alarm_frame
+        self.proc_frame = proc_frame
+        self.trends_frame = trends_frame
 
     def set_label_color(self, label, value, normal_color, alarm_color, alarm_cond):
         label.config(fg=alarm_color if alarm_cond else normal_color)
+        # Also update status indicator if present
+        key = None
+        for k, v in self.labels.items():
+            if v == label:
+                key = k
+                break
+        if key and hasattr(self, 'status_indicators') and key in self.status_indicators:
+            canvas, indicator = self.status_indicators[key]
+            color = alarm_color if alarm_cond else normal_color
+            # Map to SCADA-like colors
+            if color == 'green':
+                fill = '#00cc44'
+            elif color == 'gray':
+                fill = '#cccccc'
+            elif color == 'red':
+                fill = '#ff3333'
+            elif color == 'black':
+                fill = '#222222'
+            else:
+                fill = color
+            canvas.itemconfig(indicator, fill=fill)
 
     def update(self, step):
         status = self.system.get_status()
@@ -95,28 +219,141 @@ class DesalinationHMI:
         elif getattr(self.system, 'running', False):
             self.vars['step'].set("SYSTEM RUNNING")
         else:
-            self.vars['step'].set("Desalination System Ready")
+            self.vars['step'].set("SYSTEM STOPPED")
         for k in self.vars:
             if k != 'step':
                 self.vars[k].set(status.get(k, 'OFF'))
         c = self.system.config
-        # Only set label color if label exists
-        for label_key in self.labels:
-            if label_key in status:
-                if label_key == 'alarm':
-                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'black', 'red', status.get(label_key,'OFF') == 'YES')
-                elif label_key == 'prv101':
-                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'green', 'gray', status.get(label_key,'OFF') == 'OFF')
-                elif label_key in ['ground','roof','turb','press']:
-                    # Use process value logic
-                    continue
-                else:
-                    self.set_label_color(self.labels[label_key], status.get(label_key,'OFF'), 'green', 'gray', status.get(label_key,'OFF') == 'OFF')
-        self.set_label_color(self.labels['ground'], status.get('ground','OFF'), 'black', 'red', self.system.ground_tank_level < c.GROUND_TANK_MIN or self.system.ground_tank_level > c.GROUND_TANK_MAX)
-        self.set_label_color(self.labels['roof'], status.get('roof','OFF'), 'black', 'red', self.system.roof_tank_level > c.ROOF_TANK_MAX)
-        self.set_label_color(self.labels['turb'], status.get('turb','OFF'), 'black', 'red', self.system.pre_treatment_turbidity > c.TURBIDITY_MAX)
-        self.set_label_color(self.labels['press'], status.get('press','OFF'), 'black', 'red', self.system.ro_feed_pressure < c.PRESSURE_MIN or self.system.ro_feed_pressure > c.PRESSURE_MAX)
+        # Update progress bars for tanks (parse percentage from string like '54.2%')
+        try:
+            ground_str = status.get('ground', '0')
+            ground_val = float(ground_str.replace('%','').strip())
+            self.ground_pb['value'] = max(0, min(100, ground_val))
+        except Exception:
+            self.ground_pb['value'] = 0
+            
+        try:
+            roof_str = status.get('roof', '0')
+            roof_val = float(roof_str.replace('%','').strip())
+            self.roof_pb['value'] = max(0, min(100, roof_val))
+        except Exception:
+            self.roof_pb['value'] = 0
+              # Update alarm indicators
+        self._update_alarm_indicators()
+        # Update production metric label colors based on status
+        self._update_production_colors()
+        # Update trend data and plots
+        self._update_trends()
+        
         self.root.update()
+
+    def _update_alarm_indicators(self):
+        """Update alarm indicator checkboxes based on system status"""
+        c = self.system.config
+        active_alarms = []
+        
+        # Emergency Stop
+        emergency_active = getattr(self.system, 'emergency', False)
+        self.alarm_checkboxes['emergency']['var'].set(emergency_active)
+        if emergency_active:
+            active_alarms.append("Emergency")
+            self.alarm_checkboxes['emergency']['widget'].config(fg="#ff0000")
+        else:
+            self.alarm_checkboxes['emergency']['widget'].config(fg="#666666")
+            
+        # Low Tank Level
+        low_tank = self.system.ground_tank_level < c.GROUND_TANK_MIN
+        self.alarm_checkboxes['low_tank']['var'].set(low_tank)
+        if low_tank:
+            active_alarms.append("Low Tank")
+            self.alarm_checkboxes['low_tank']['widget'].config(fg="#ff6600")
+        else:
+            self.alarm_checkboxes['low_tank']['widget'].config(fg="#666666")
+            
+        # RO Pressure Fault
+        pressure_fault = (self.system.ro_feed_pressure < c.PRESSURE_MIN or 
+                         self.system.ro_feed_pressure > c.PRESSURE_MAX)
+        self.alarm_checkboxes['pressure_fault']['var'].set(pressure_fault)
+        if pressure_fault:
+            active_alarms.append("Pressure")
+            self.alarm_checkboxes['pressure_fault']['widget'].config(fg="#ff6600")
+        else:
+            self.alarm_checkboxes['pressure_fault']['widget'].config(fg="#666666")
+            
+        # System Leak (using ALM101)
+        system_leak = getattr(self.system, 'alm101', False)
+        self.alarm_checkboxes['system_leak']['var'].set(system_leak)
+        if system_leak:
+            active_alarms.append("Leak")
+            self.alarm_checkboxes['system_leak']['widget'].config(fg="#ff3300")
+        else:
+            self.alarm_checkboxes['system_leak']['widget'].config(fg="#666666")
+            
+        # High Tank Level
+        high_tank = self.system.roof_tank_level > c.ROOF_TANK_MAX
+        self.alarm_checkboxes['high_tank']['var'].set(high_tank)
+        if high_tank:
+            active_alarms.append("High Tank")
+            self.alarm_checkboxes['high_tank']['widget'].config(fg="#ff6600")
+        else:
+            self.alarm_checkboxes['high_tank']['widget'].config(fg="#666666")
+            
+        # Pump Fault (any critical pump off when it should be on)
+        pump_fault = (getattr(self.system, 'running', False) and 
+                     not self.system.ro_pump and 
+                     self.system.ground_tank_level > 20)
+        self.alarm_checkboxes['pump_fault']['var'].set(pump_fault)
+        if pump_fault:
+            active_alarms.append("Pump Fault")
+            self.alarm_checkboxes['pump_fault']['widget'].config(fg="#ff6600")
+        else:
+            self.alarm_checkboxes['pump_fault']['widget'].config(fg="#666666")
+            
+        # Water Quality
+        water_quality = self.system.pre_treatment_turbidity > c.TURBIDITY_MAX
+        self.alarm_checkboxes['water_quality']['var'].set(water_quality)
+        if water_quality:
+            active_alarms.append("Water Quality")
+            self.alarm_checkboxes['water_quality']['widget'].config(fg="#ff9900")
+        else:
+            self.alarm_checkboxes['water_quality']['widget'].config(fg="#666666")
+            
+        # General Alarm
+        general_alarm = getattr(self.system, 'alarm', False)
+        self.alarm_checkboxes['general_alarm']['var'].set(general_alarm)
+        if general_alarm:
+            active_alarms.append("General")
+            self.alarm_checkboxes['general_alarm']['widget'].config(fg="#ff0000")
+        else:
+            self.alarm_checkboxes['general_alarm']['widget'].config(fg="#666666")
+            
+        # Update summary
+        if active_alarms:
+            alarm_text = f"Active: {', '.join(active_alarms)}"
+            self.active_alarms_lbl.config(text=alarm_text, fg="#ff0000")
+        else:
+            self.active_alarms_lbl.config(text="Active: None", fg="#009933")
+    
+    def _update_production_colors(self):
+        """Update production metric label colors based on performance"""
+        # Production Rate colors
+        if self.system.production_rate > 4.0:
+            self.production_rate_lbl.config(fg="#009933")  # Good production
+        elif self.system.production_rate > 2.0:
+            self.production_rate_lbl.config(fg="#ff9900")  # Moderate production
+        else:
+            self.production_rate_lbl.config(fg="#ff3300")  # Low/no production
+            
+        # Efficiency colors
+        if self.system.efficiency > 80:
+            self.efficiency_lbl.config(fg="#009933")  # High efficiency
+        elif self.system.efficiency > 60:
+            self.efficiency_lbl.config(fg="#ff9900")  # Moderate efficiency
+        else:
+            self.efficiency_lbl.config(fg="#ff3300")  # Low efficiency
+            
+        # Total produced is informational, keep it neutral
+        self.total_produced_lbl.config(fg="#009933")
 
     def start_system(self):
         # Prevent start if emergency is active
@@ -176,6 +413,52 @@ class DesalinationHMI:
             self.root.after(500, self._run_loop)
         else:
             self.update(getattr(self, '_step', 0))
+
+    def _update_trends(self):
+        """Update trend data and refresh the trend plots"""
+        # Add current time and data points
+        current_time = time.time() - self.start_time
+        self.trend_data['time'].append(current_time)
+        self.trend_data['ground_level'].append(self.system.ground_tank_level)
+        self.trend_data['roof_level'].append(self.system.roof_tank_level)
+        self.trend_data['pressure'].append(self.system.ro_feed_pressure)
+        
+        # Convert deques to lists for matplotlib
+        times = list(self.trend_data['time'])
+        ground_levels = list(self.trend_data['ground_level'])
+        roof_levels = list(self.trend_data['roof_level'])
+        pressures = list(self.trend_data['pressure'])
+        
+        # Update tank level plot
+        self.ground_line.set_data(times, ground_levels)
+        self.roof_line.set_data(times, roof_levels)
+        
+        # Update pressure plot  
+        self.pressure_line.set_data(times, pressures)
+        
+        # Adjust x-axis limits to show a rolling window
+        if times:
+            # Show last 60 seconds of data
+            max_time = max(times)
+            min_time = max(0, max_time - 60)
+            
+            self.tank_level_ax.set_xlim(min_time, max_time)
+            self.pressure_ax.set_xlim(min_time, max_time)
+            
+            # Auto-scale y-axis if needed
+            if ground_levels or roof_levels:
+                all_levels = ground_levels + roof_levels
+                level_min = max(0, min(all_levels) - 5)
+                level_max = min(100, max(all_levels) + 5)
+                self.tank_level_ax.set_ylim(level_min, level_max)
+            
+            if pressures:
+                pressure_min = max(0, min(pressures) - 5)
+                pressure_max = min(80, max(pressures) + 5)
+                self.pressure_ax.set_ylim(pressure_min, pressure_max)
+        
+        # Refresh the canvas
+        self.trend_canvas.draw_idle()
 
 if __name__ == "__main__":
     from config import SystemConfig
