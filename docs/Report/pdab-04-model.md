@@ -283,8 +283,8 @@ flowchart
     STOP((Stop))
     style START fill:#b6fcb6,stroke:#2e8b57,stroke-width:3px
     style STOP fill:#ffb3b3,stroke:#c0392b,stroke-width:3px
-    Start(["System Start"]) --> Init["Initialize Variables"]
-    Init --> CheckSource{Seawater Available?}
+    START --> INIT["Initialize Variables"]
+    INIT --> CheckSource{Seawater Available?}
     CheckSource -- No --> AlarmSource["Alarm: No Source"]
     AlarmSource --> STOP
     CheckSource -- Yes --> PreTreat["Start Pre-treatment"]
